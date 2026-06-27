@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: portalescolar-db
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - portalescolar-network
+
+volumes:
+  pgdata:
+
+networks:
+  portalescolar-network:
+    driver: bridge
