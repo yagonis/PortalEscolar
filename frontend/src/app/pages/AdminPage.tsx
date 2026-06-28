@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, Search,
   Newspaper, LogOut, LayoutDashboard, Bell, Calendar,
@@ -100,7 +100,32 @@ const noticia_vazia: Omit<Noticia, "id"> = {
 };
 
 export function AdminPage() {
-  const [noticias, setNoticias] = useState<Noticia[]>(noticias_iniciais);
+  const [noticias, setNoticias] = useState<Noticia[]>([]);
+  useEffect(() => {
+  async function carregarNoticias() {
+    try {
+      const token = localStorage.getItem("token");
+
+      const resposta = await fetch("http://localhost:8080/api/news?isAdmin=true", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!resposta.ok) {
+        throw new Error("Erro ao buscar notícias");
+      }
+
+      const dados = await resposta.json();
+
+      setNoticias(dados.content);
+    } catch (erro) {
+      console.error("Erro ao carregar notícias:", erro);
+    }
+  }
+
+  carregarNoticias();
+}, []);
   const [modo, setModo] = useState<Modo>("lista");
   const [noticiaEditando, setNoticiaEditando] = useState<Noticia | null>(null);
   const [form, setForm] = useState<Omit<Noticia, "id">>(noticia_vazia);
