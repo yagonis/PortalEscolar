@@ -1,31 +1,36 @@
+import { useEffect, useState } from "react";
 import { Newspaper, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 
+type Noticia = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  body: string;
+  imageUrl: string | null;
+  status: string;
+  publishedAt: string | null;
+  updatedAt: string | null;
+};
+
 export function UltimasNoticias() {
-  const noticias = [
-    {
-      id: 1,
-      titulo: "Alunos do 5º ano conquistam medalhas na Olimpíada de Matemática",
-      resumo: "Nossa escola teve destaque na competição regional com 8 medalhas conquistadas pelos estudantes.",
-      data: "25/05/2026",
-      imagem: "bg-gradient-to-br from-yellow-400 to-orange-500"
-    },
-    {
-      id: 2,
-      titulo: "Projeto de Sustentabilidade é apresentado na comunidade",
-      resumo: "Iniciativa dos alunos do ensino médio sobre reciclagem e preservação ambiental.",
-      data: "23/05/2026",
-      imagem: "bg-gradient-to-br from-green-400 to-emerald-600"
-    },
-    {
-      id: 3,
-      titulo: "Nova biblioteca digital disponível para todos os alunos",
-      resumo: "Acervo digital com mais de 5 mil títulos já pode ser acessado pelo portal.",
-      data: "20/05/2026",
-      imagem: "bg-gradient-to-br from-blue-400 to-indigo-600"
+  const [noticias, setNoticias] = useState<Noticia[]>([]);
+
+  useEffect(() => {
+    async function carregarNoticias() {
+      try {
+        const resposta = await fetch("http://localhost:8080/api/news");
+        const dados = await resposta.json();
+
+        setNoticias(dados.content ?? []);
+      } catch (erro) {
+        console.error("Erro ao carregar notícias:", erro);
+      }
     }
-  ];
+
+    carregarNoticias();
+  }, []);
 
   return (
     <Card>
@@ -41,6 +46,7 @@ export function UltimasNoticias() {
           <Button variant="outline" size="sm">Ver Todas</Button>
         </div>
       </CardHeader>
+
       <CardContent>
         <div className="grid md:grid-cols-3 gap-4">
           {noticias.map((noticia) => (
@@ -48,13 +54,21 @@ export function UltimasNoticias() {
               key={noticia.id}
               className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer"
             >
-              <div className={`h-40 ${noticia.imagem}`} />
+              <div className={`h-40 ${noticia.imageUrl ?? "bg-gradient-to-br from-blue-400 to-indigo-600"}`} />
+
               <div className="p-4">
-                <p className="text-xs text-muted-foreground mb-2">{noticia.data}</p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {noticia.publishedAt ?? "Não publicada"}
+                </p>
+
                 <h3 className="font-medium mb-2 group-hover:text-primary transition-colors">
-                  {noticia.titulo}
+                  {noticia.title}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">{noticia.resumo}</p>
+
+                <p className="text-sm text-muted-foreground mb-3">
+                  {noticia.subtitle}
+                </p>
+
                 <Button variant="ghost" size="sm" className="p-0 h-auto">
                   Ler mais <ArrowRight className="size-4 ml-1" />
                 </Button>
