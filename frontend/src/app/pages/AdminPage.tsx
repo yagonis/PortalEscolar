@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, Search,
   Newspaper, LogOut, LayoutDashboard, Bell, Calendar,
-  X, Check, ImageIcon, Tag, AlignLeft
+  X, Check, ImageIcon, AlignLeft
 } from "lucide-react";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -14,23 +14,18 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
 
-type Categoria = "Esportes" | "Sustentabilidade" | "Tecnologia" | "Cultura" | "Institucional" | "Saúde";
+type Status = "PUBLISHED" | "DRAFT";
 
 interface Noticia {
-  id: number;
-  titulo: string;
-  resumo: string;
-  conteudo: string;
-  data: string;
-  categoria: Categoria;
-  publicada: boolean;
-  destaque: boolean;
-  imagem: string;
+  id: string;
+  title: string;
+  subtitle: string;
+  body: string;
+  imageUrl: string;
+  status: Status;
+  publishedAt: string;
+  updatedAt: string;
 }
-
-const CATEGORIAS: Categoria[] = [
-  "Esportes", "Sustentabilidade", "Tecnologia", "Cultura", "Institucional", "Saúde"
-];
 
 const GRADIENTES: Record<string, string> = {
   "bg-gradient-to-br from-yellow-400 to-orange-500": "Amarelo → Laranja",
@@ -41,106 +36,57 @@ const GRADIENTES: Record<string, string> = {
   "bg-gradient-to-br from-teal-400 to-cyan-600": "Teal → Ciano",
 };
 
-const noticias_iniciais: Noticia[] = [
-  {
-    id: 1,
-    titulo: "Alunos do 5º ano conquistam medalhas na Olimpíada de Matemática",
-    resumo: "Nossa escola teve destaque na competição regional com 8 medalhas conquistadas pelos estudantes.",
-    conteudo: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    data: "25/05/2026",
-    categoria: "Esportes",
-    publicada: true,
-    destaque: true,
-    imagem: "bg-gradient-to-br from-yellow-400 to-orange-500",
-  },
-  {
-    id: 2,
-    titulo: "Projeto de Sustentabilidade é apresentado na comunidade",
-    resumo: "Iniciativa dos alunos do ensino médio sobre reciclagem e preservação ambiental.",
-    conteudo: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    data: "23/05/2026",
-    categoria: "Sustentabilidade",
-    publicada: true,
-    destaque: false,
-    imagem: "bg-gradient-to-br from-green-400 to-emerald-600",
-  },
-  {
-    id: 3,
-    titulo: "Nova biblioteca digital disponível para todos os alunos",
-    resumo: "Acervo digital com mais de 5 mil títulos já pode ser acessado pelo portal.",
-    conteudo: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    data: "20/05/2026",
-    categoria: "Tecnologia",
-    publicada: false,
-    destaque: false,
-    imagem: "bg-gradient-to-br from-blue-400 to-indigo-600",
-  },
-];
-
-const CATEGORIA_CORES: Record<Categoria, string> = {
-  Esportes: "bg-yellow-100 text-yellow-800",
-  Sustentabilidade: "bg-green-100 text-green-800",
-  Tecnologia: "bg-blue-100 text-blue-800",
-  Cultura: "bg-purple-100 text-purple-800",
-  Institucional: "bg-gray-100 text-gray-800",
-  Saúde: "bg-rose-100 text-rose-800",
-};
-
 type Modo = "lista" | "novo" | "editar";
 
-const noticia_vazia: Omit<Noticia, "id"> = {
-  titulo: "",
-  resumo: "",
-  conteudo: "",
-  data: new Date().toLocaleDateString("pt-BR"),
-  categoria: "Institucional",
-  publicada: false,
-  destaque: false,
-  imagem: "bg-gradient-to-br from-blue-400 to-indigo-600",
+const noticia_vazia: Omit<Noticia, "id" | "updatedAt"> = {
+  title: "",
+  subtitle: "",
+  body: "",
+  publishedAt: new Date().toLocaleDateString("pt-BR"),
+  status: "DRAFT",
+  imageUrl: "bg-gradient-to-br from-blue-400 to-indigo-600",
 };
 
 export function AdminPage() {
   const [noticias, setNoticias] = useState<Noticia[]>([]);
+
   useEffect(() => {
-  async function carregarNoticias() {
-    try {
-      const token = localStorage.getItem("token");
+    async function carregarNoticias() {
+      try {
+        const token = localStorage.getItem("token");
 
-      const resposta = await fetch("http://localhost:8080/api/news?isAdmin=true", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const resposta = await fetch("http://localhost:8080/api/news?isAdmin=true", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      if (!resposta.ok) {
-        throw new Error("Erro ao buscar notícias");
+        if (!resposta.ok) {
+          throw new Error("Erro ao buscar notícias");
+        }
+
+        const dados = await resposta.json();
+
+        setNoticias(dados.content);
+      } catch (erro) {
+        console.error("Erro ao carregar notícias:", erro);
       }
-
-      const dados = await resposta.json();
-
-      setNoticias(dados.content);
-    } catch (erro) {
-      console.error("Erro ao carregar notícias:", erro);
     }
-  }
 
-  carregarNoticias();
-}, []);
+    carregarNoticias();
+  }, []);
+
   const [modo, setModo] = useState<Modo>("lista");
   const [noticiaEditando, setNoticiaEditando] = useState<Noticia | null>(null);
-  const [form, setForm] = useState<Omit<Noticia, "id">>(noticia_vazia);
+  const [form, setForm] = useState<Omit<Noticia, "id" | "updatedAt">>(noticia_vazia);
   const [busca, setBusca] = useState("");
-  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
 
-  const noticiasFiltradas = noticias.filter((n) => {
-    const matchBusca = n.titulo.toLowerCase().includes(busca.toLowerCase());
-    const matchCategoria = filtroCategoria === "todas" || n.categoria === filtroCategoria;
-    return matchBusca && matchCategoria;
-  });
+  const noticiasFiltradas = noticias.filter((n) =>
+    n.title.toLowerCase().includes(busca.toLowerCase())
+  );
 
-  const publicadas = noticias.filter((n) => n.publicada).length;
-  const rascunhos = noticias.filter((n) => !n.publicada).length;
-  const destaques = noticias.filter((n) => n.destaque).length;
+  const publicadas = noticias.filter((n) => n.status === "PUBLISHED").length;
+  const rascunhos = noticias.filter((n) => n.status === "DRAFT").length;
 
   function abrirNovo() {
     setForm(noticia_vazia);
@@ -160,32 +106,36 @@ export function AdminPage() {
   }
 
   function salvar() {
-    if (!form.titulo.trim() || !form.resumo.trim()) return;
+    if (!form.title.trim() || !form.subtitle.trim()) return;
+
+    const agora = new Date().toISOString();
 
     if (modo === "novo") {
-      const nova: Noticia = { ...form, id: Date.now() };
+      const nova: Noticia = { ...form, id: String(Date.now()), updatedAt: agora };
       setNoticias((prev) => [nova, ...prev]);
     } else if (modo === "editar" && noticiaEditando) {
       setNoticias((prev) =>
-        prev.map((n) => (n.id === noticiaEditando.id ? { ...form, id: n.id } : n))
+        prev.map((n) =>
+          n.id === noticiaEditando.id
+            ? { ...form, id: n.id, updatedAt: agora }
+            : n
+        )
       );
     }
     setModo("lista");
   }
 
-  function excluir(id: number) {
+  function excluir(id: string) {
     setNoticias((prev) => prev.filter((n) => n.id !== id));
   }
 
-  function togglePublicada(id: number) {
+  function togglePublicada(id: string) {
     setNoticias((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, publicada: !n.publicada } : n))
-    );
-  }
-
-  function toggleDestaque(id: number) {
-    setNoticias((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, destaque: !n.destaque } : n))
+      prev.map((n) =>
+        n.id === id
+          ? { ...n, status: n.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" }
+          : n
+      )
     );
   }
 
@@ -212,9 +162,9 @@ export function AdminPage() {
               {Object.entries(GRADIENTES).map(([cls, nome]) => (
                 <button
                   key={cls}
-                  onClick={() => setForm((f) => ({ ...f, imagem: cls }))}
+                  onClick={() => setForm((f) => ({ ...f, imageUrl: cls }))}
                   className={`h-14 rounded-lg ${cls} transition-all ring-offset-2 ${
-                    form.imagem === cls ? "ring-2 ring-primary" : "ring-0"
+                    form.imageUrl === cls ? "ring-2 ring-primary" : "ring-0"
                   }`}
                   title={nome}
                 />
@@ -226,103 +176,73 @@ export function AdminPage() {
 
           {/* Título */}
           <div className="space-y-2">
-            <Label htmlFor="titulo">Título *</Label>
+            <Label htmlFor="title">Título *</Label>
             <Input
-              id="titulo"
+              id="title"
               placeholder="Título da notícia"
-              value={form.titulo}
-              onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             />
           </div>
 
-          {/* Resumo */}
+          {/* Subtítulo */}
           <div className="space-y-2">
-            <Label htmlFor="resumo" className="flex items-center gap-2">
+            <Label htmlFor="subtitle" className="flex items-center gap-2">
               <AlignLeft className="size-4 text-muted-foreground" />
-              Resumo *
+              Subtítulo *
             </Label>
             <Textarea
-              id="resumo"
+              id="subtitle"
               placeholder="Breve descrição exibida na listagem"
               rows={2}
               className="resize-none"
-              value={form.resumo}
-              onChange={(e) => setForm((f) => ({ ...f, resumo: e.target.value }))}
+              value={form.subtitle}
+              onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))}
             />
           </div>
 
           {/* Conteúdo */}
           <div className="space-y-2">
-            <Label htmlFor="conteudo">Conteúdo Completo</Label>
+            <Label htmlFor="body">Conteúdo Completo</Label>
             <Textarea
-              id="conteudo"
+              id="body"
               placeholder="Texto completo da notícia..."
               rows={6}
               className="resize-none"
-              value={form.conteudo}
-              onChange={(e) => setForm((f) => ({ ...f, conteudo: e.target.value }))}
+              value={form.body}
+              onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Categoria */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Tag className="size-4 text-muted-foreground" />
-                Categoria
-              </Label>
-              <Select
-                value={form.categoria}
-                onValueChange={(v) => setForm((f) => ({ ...f, categoria: v as Categoria }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIAS.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Data */}
-            <div className="space-y-2">
-              <Label htmlFor="data">Data de Publicação</Label>
-              <Input
-                id="data"
-                placeholder="DD/MM/AAAA"
-                value={form.data}
-                onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))}
-              />
-            </div>
+          {/* Data */}
+          <div className="space-y-2">
+            <Label htmlFor="publishedAt">Data de Publicação</Label>
+            <Input
+              id="publishedAt"
+              placeholder="DD/MM/AAAA"
+              value={form.publishedAt}
+              onChange={(e) => setForm((f) => ({ ...f, publishedAt: e.target.value }))}
+            />
           </div>
 
           {/* Opções */}
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, publicada: !f.publicada }))}
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  status: f.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
+                }))
+              }
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                form.publicada
+                form.status === "PUBLISHED"
                   ? "border-green-500 bg-green-50 text-green-700"
                   : "border-border text-muted-foreground hover:bg-accent"
               }`}
             >
-              {form.publicada ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-              {form.publicada ? "Publicada" : "Rascunho"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setForm((f) => ({ ...f, destaque: !f.destaque }))}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                form.destaque
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <Bell className="size-4" />
-              Destacar no banner
+              {form.status === "PUBLISHED" ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+              {form.status === "PUBLISHED" ? "Publicada" : "Rascunho"}
             </button>
           </div>
         </CardContent>
@@ -332,7 +252,7 @@ export function AdminPage() {
         <Button variant="outline" onClick={cancelar}>Cancelar</Button>
         <Button
           onClick={salvar}
-          disabled={!form.titulo.trim() || !form.resumo.trim()}
+          disabled={!form.title.trim() || !form.subtitle.trim()}
           className="gap-2"
         >
           <Check className="size-4" />
@@ -401,7 +321,7 @@ export function AdminPage() {
               </div>
 
               {/* Cards de resumo */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <Card>
                   <CardContent className="pt-5 pb-4">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
@@ -414,13 +334,6 @@ export function AdminPage() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Publicadas</p>
                     <p className="text-3xl font-bold mt-1 text-green-600">{publicadas}</p>
                     <p className="text-xs text-muted-foreground mt-1">{rascunhos} em rascunho</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-5 pb-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Em Destaque</p>
-                    <p className="text-3xl font-bold mt-1 text-primary">{destaques}</p>
-                    <p className="text-xs text-muted-foreground mt-1">no banner principal</p>
                   </CardContent>
                 </Card>
               </div>
@@ -436,17 +349,6 @@ export function AdminPage() {
                     onChange={(e) => setBusca(e.target.value)}
                   />
                 </div>
-                <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-                  <SelectTrigger className="w-44">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas as categorias</SelectItem>
-                    {CATEGORIAS.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Tabela de notícias */}
@@ -465,25 +367,15 @@ export function AdminPage() {
                           className="flex items-center gap-4 p-4 hover:bg-muted/40 transition-colors"
                         >
                           {/* Miniatura */}
-                          <div className={`size-12 rounded-lg ${noticia.imagem} shrink-0`} />
+                          <div className={`size-12 rounded-lg ${noticia.imageUrl} shrink-0`} />
 
                           {/* Informações */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <p className="font-medium text-sm truncate">{noticia.titulo}</p>
-                              {noticia.destaque && (
-                                <Badge variant="default" className="text-xs shrink-0">Destaque</Badge>
-                              )}
+                              <p className="font-medium text-sm truncate">{noticia.title}</p>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span>{noticia.data}</span>
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  CATEGORIA_CORES[noticia.categoria]
-                                }`}
-                              >
-                                {noticia.categoria}
-                              </span>
+                              <span>{noticia.publishedAt}</span>
                             </div>
                           </div>
 
@@ -491,12 +383,12 @@ export function AdminPage() {
                           <button
                             onClick={() => togglePublicada(noticia.id)}
                             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
-                              noticia.publicada
+                              noticia.status === "PUBLISHED"
                                 ? "bg-green-100 text-green-700 hover:bg-green-200"
                                 : "bg-muted text-muted-foreground hover:bg-muted/80"
                             }`}
                           >
-                            {noticia.publicada ? (
+                            {noticia.status === "PUBLISHED" ? (
                               <><Eye className="size-3" /> Publicada</>
                             ) : (
                               <><EyeOff className="size-3" /> Rascunho</>

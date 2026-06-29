@@ -4,6 +4,7 @@ import { HomePage } from "./pages/HomePage";
 import { AdminPage } from "./pages/AdminPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -11,7 +12,13 @@ export const router = createBrowserRouter([
     Component: Root,
     children: [
       { index: true, Component: HomePage },
-      { path: "admin", Component: AdminPage },
+
+      {Component: ProtectedRoute,
+        children: [
+          {path: "admin", Component: AdminPage},
+        ],
+      },
+
       { path: "*", Component: NotFoundPage },
       { path: "login", Component: LoginPage },
     ],
