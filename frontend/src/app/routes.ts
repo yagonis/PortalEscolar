@@ -3,6 +3,7 @@ import { Root } from "./Root";
 import { HomePage } from "./pages/HomePage";
 import { AdminPage } from "./pages/AdminPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { LoginPage } from "./pages/LoginPage";
 
 export const router = createBrowserRouter([
   {
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
       { index: true, Component: HomePage },
       { path: "admin", Component: AdminPage },
       { path: "*", Component: NotFoundPage },
+      { path: "login", Component: LoginPage },
     ],
   },
 ]);

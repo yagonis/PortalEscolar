@@ -56,7 +56,6 @@ export function Header() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="size-5" />
-              <Badge className="absolute -top-1 -right-1 size-5 flex items-center justify-center p-0 text-xs">3</Badge>
             </Button>
             <Link to="/admin">
               <Button variant="outline" size="sm" className="gap-2 hidden lg:flex">
