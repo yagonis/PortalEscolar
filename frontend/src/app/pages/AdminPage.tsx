@@ -4,28 +4,43 @@ import {
   Newspaper, LogOut, LayoutDashboard, Bell, Calendar,
   X, Check, ImageIcon, AlignLeft
 } from "lucide-react";
-import { Link } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { useNavigate } from "react-router";
+import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
+import {
+  criarNoticia,
+  listarNoticias,
+  editarNoticia,
+  excluirNoticia,
+  publicarNoticia,
+  voltarParaRascunho,
+} from "../services/news";
 
-type Status = "PUBLISHED" | "DRAFT";
+type Status = "PUBLISHED" | "DRAFT" | "ARCHIVED";
 
 interface Noticia {
   id: string;
   title: string;
+  subtitle: string | null;
+  body: string;
+  imageUrl: string | null;
+  status: Status;
+  publishedAt: string | null;
+  updatedAt: string | null;
+}
+
+type NoticiaForm = {
+  title: string;
   subtitle: string;
   body: string;
   imageUrl: string;
-  status: Status;
-  publishedAt: string;
-  updatedAt: string;
-}
+};
+
+type Modo = "lista" | "novo" | "editar";
 
 const GRADIENTES: Record<string, string> = {
   "bg-gradient-to-br from-yellow-400 to-orange-500": "Amarelo → Laranja",
@@ -36,50 +51,34 @@ const GRADIENTES: Record<string, string> = {
   "bg-gradient-to-br from-teal-400 to-cyan-600": "Teal → Ciano",
 };
 
-type Modo = "lista" | "novo" | "editar";
-
-const noticia_vazia: Omit<Noticia, "id" | "updatedAt"> = {
+const noticia_vazia: NoticiaForm = {
   title: "",
   subtitle: "",
   body: "",
-  publishedAt: new Date().toLocaleDateString("pt-BR"),
-  status: "DRAFT",
   imageUrl: "bg-gradient-to-br from-blue-400 to-indigo-600",
 };
 
 export function AdminPage() {
+  const navigate = useNavigate();
+
   const [noticias, setNoticias] = useState<Noticia[]>([]);
-
-  useEffect(() => {
-    async function carregarNoticias() {
-      try {
-        const token = localStorage.getItem("token");
-
-        const resposta = await fetch("http://localhost:8080/api/news?isAdmin=true", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!resposta.ok) {
-          throw new Error("Erro ao buscar notícias");
-        }
-
-        const dados = await resposta.json();
-
-        setNoticias(dados.content);
-      } catch (erro) {
-        console.error("Erro ao carregar notícias:", erro);
-      }
-    }
-
-    carregarNoticias();
-  }, []);
-
   const [modo, setModo] = useState<Modo>("lista");
   const [noticiaEditando, setNoticiaEditando] = useState<Noticia | null>(null);
-  const [form, setForm] = useState<Omit<Noticia, "id" | "updatedAt">>(noticia_vazia);
+  const [form, setForm] = useState<NoticiaForm>(noticia_vazia);
   const [busca, setBusca] = useState("");
+
+  async function carregarNoticias() {
+    try {
+      const dados = await listarNoticias();
+      setNoticias(dados.content ?? []);
+    } catch (erro) {
+      console.error("Erro ao carregar notícias:", erro);
+    }
+  }
+
+  useEffect(() => {
+    carregarNoticias();
+  }, []);
 
   const noticiasFiltradas = noticias.filter((n) =>
     n.title.toLowerCase().includes(busca.toLowerCase())
@@ -95,7 +94,13 @@ export function AdminPage() {
   }
 
   function abrirEditar(noticia: Noticia) {
-    setForm({ ...noticia });
+    setForm({
+      title: noticia.title,
+      subtitle: noticia.subtitle ?? "",
+      body: noticia.body,
+      imageUrl: noticia.imageUrl ?? noticia_vazia.imageUrl,
+    });
+
     setNoticiaEditando(noticia);
     setModo("editar");
   }
@@ -103,40 +108,61 @@ export function AdminPage() {
   function cancelar() {
     setModo("lista");
     setNoticiaEditando(null);
+    setForm(noticia_vazia);
   }
 
-  function salvar() {
-    if (!form.title.trim() || !form.subtitle.trim()) return;
-
-    const agora = new Date().toISOString();
-
-    if (modo === "novo") {
-      const nova: Noticia = { ...form, id: String(Date.now()), updatedAt: agora };
-      setNoticias((prev) => [nova, ...prev]);
-    } else if (modo === "editar" && noticiaEditando) {
-      setNoticias((prev) =>
-        prev.map((n) =>
-          n.id === noticiaEditando.id
-            ? { ...form, id: n.id, updatedAt: agora }
-            : n
-        )
-      );
+  async function salvar() {
+    if (!form.title.trim() || !form.body.trim()) {
+      alert("Preencha o título e o conteúdo.");
+      return;
     }
-    setModo("lista");
+
+    try {
+      if (modo === "novo") {
+        await criarNoticia(form);
+      } else if (noticiaEditando) {
+        await editarNoticia(noticiaEditando.id, form);
+      }
+
+      await carregarNoticias();
+      cancelar();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao salvar notícia.");
+    }
   }
 
-  function excluir(id: string) {
-    setNoticias((prev) => prev.filter((n) => n.id !== id));
+  async function excluir(id: string) {
+    if (!window.confirm("Deseja realmente excluir esta notícia?")) return;
+
+    try {
+      await excluirNoticia(id);
+      await carregarNoticias();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao excluir notícia.");
+    }
   }
 
-  function togglePublicada(id: string) {
-    setNoticias((prev) =>
-      prev.map((n) =>
-        n.id === id
-          ? { ...n, status: n.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" }
-          : n
-      )
-    );
+  async function togglePublicada(noticia: Noticia) {
+    try {
+      if (noticia.status === "PUBLISHED") {
+        await voltarParaRascunho(noticia.id);
+      } else {
+        await publicarNoticia(noticia.id);
+      }
+
+      await carregarNoticias();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao alterar status.");
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
   }
 
   const formulario = (
@@ -145,6 +171,7 @@ export function AdminPage() {
         <h2 className="text-xl font-semibold">
           {modo === "novo" ? "Nova Notícia" : "Editar Notícia"}
         </h2>
+
         <Button variant="ghost" size="icon" onClick={cancelar}>
           <X className="size-5" />
         </Button>
@@ -152,16 +179,17 @@ export function AdminPage() {
 
       <Card>
         <CardContent className="pt-6 space-y-5">
-          {/* Capa */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <ImageIcon className="size-4 text-muted-foreground" />
               Imagem de Capa
             </Label>
+
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(GRADIENTES).map(([cls, nome]) => (
                 <button
                   key={cls}
+                  type="button"
                   onClick={() => setForm((f) => ({ ...f, imageUrl: cls }))}
                   className={`h-14 rounded-lg ${cls} transition-all ring-offset-2 ${
                     form.imageUrl === cls ? "ring-2 ring-primary" : "ring-0"
@@ -174,7 +202,6 @@ export function AdminPage() {
 
           <Separator />
 
-          {/* Título */}
           <div className="space-y-2">
             <Label htmlFor="title">Título *</Label>
             <Input
@@ -185,11 +212,10 @@ export function AdminPage() {
             />
           </div>
 
-          {/* Subtítulo */}
           <div className="space-y-2">
             <Label htmlFor="subtitle" className="flex items-center gap-2">
               <AlignLeft className="size-4 text-muted-foreground" />
-              Subtítulo *
+              Subtítulo
             </Label>
             <Textarea
               id="subtitle"
@@ -201,9 +227,8 @@ export function AdminPage() {
             />
           </div>
 
-          {/* Conteúdo */}
           <div className="space-y-2">
-            <Label htmlFor="body">Conteúdo Completo</Label>
+            <Label htmlFor="body">Conteúdo Completo *</Label>
             <Textarea
               id="body"
               placeholder="Texto completo da notícia..."
@@ -213,50 +238,21 @@ export function AdminPage() {
               onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
             />
           </div>
-
-          {/* Data */}
-          <div className="space-y-2">
-            <Label htmlFor="publishedAt">Data de Publicação</Label>
-            <Input
-              id="publishedAt"
-              placeholder="DD/MM/AAAA"
-              value={form.publishedAt}
-              onChange={(e) => setForm((f) => ({ ...f, publishedAt: e.target.value }))}
-            />
-          </div>
-
-          {/* Opções */}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() =>
-                setForm((f) => ({
-                  ...f,
-                  status: f.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
-                }))
-              }
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                form.status === "PUBLISHED"
-                  ? "border-green-500 bg-green-50 text-green-700"
-                  : "border-border text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              {form.status === "PUBLISHED" ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-              {form.status === "PUBLISHED" ? "Publicada" : "Rascunho"}
-            </button>
-          </div>
         </CardContent>
       </Card>
 
       <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={cancelar}>Cancelar</Button>
+        <Button variant="outline" onClick={cancelar}>
+          Cancelar
+        </Button>
+
         <Button
           onClick={salvar}
-          disabled={!form.title.trim() || !form.subtitle.trim()}
+          disabled={!form.title.trim() || !form.body.trim()}
           className="gap-2"
         >
           <Check className="size-4" />
-          {modo === "novo" ? "Publicar Notícia" : "Salvar Alterações"}
+          {modo === "novo" ? "Salvar Notícia" : "Salvar Alterações"}
         </Button>
       </div>
     </div>
@@ -264,81 +260,98 @@ export function AdminPage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Barra lateral */}
       <div className="flex">
         <aside className="hidden lg:flex flex-col w-56 min-h-[calc(100vh-57px)] bg-card border-r shrink-0">
           <nav className="flex-1 p-4 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 mb-3">
               Conteúdo
             </p>
+
             <button
               onClick={() => setModo("lista")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                modo === "lista" ? "bg-primary text-primary-foreground" : "hover:bg-accent text-foreground"
+                modo === "lista"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-accent text-foreground"
               }`}
             >
               <Newspaper className="size-4" />
               Notícias
             </button>
+
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors opacity-50 cursor-not-allowed">
               <Bell className="size-4" />
               Avisos
             </button>
+
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors opacity-50 cursor-not-allowed">
               <Calendar className="size-4" />
               Eventos
             </button>
           </nav>
+
           <div className="p-4 border-t">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground">
-                <LogOut className="size-4" />
-                Sair do painel
-              </Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 text-muted-foreground"
+              onClick={logout}
+            >
+              <LogOut className="size-4" />
+              Sair do painel
+            </Button>
           </div>
         </aside>
 
-        {/* Conteúdo principal */}
         <div className="flex-1 p-6 lg:p-8">
           {modo === "lista" ? (
             <div className="space-y-6">
-              {/* Cabeçalho */}
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold flex items-center gap-2">
                     <LayoutDashboard className="size-6 text-primary" />
                     Painel Administrativo
                   </h1>
+
                   <p className="text-muted-foreground text-sm mt-1">
                     Gerencie as notícias publicadas no portal escolar
                   </p>
                 </div>
+
                 <Button onClick={abrirNovo} className="gap-2">
                   <Plus className="size-4" />
                   Nova Notícia
                 </Button>
               </div>
 
-              {/* Cards de resumo */}
               <div className="grid grid-cols-2 gap-4">
                 <Card>
                   <CardContent className="pt-5 pb-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Total
+                    </p>
                     <p className="text-3xl font-bold mt-1">{noticias.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">notícias cadastradas</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      notícias cadastradas
+                    </p>
                   </CardContent>
                 </Card>
+
                 <Card>
                   <CardContent className="pt-5 pb-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Publicadas</p>
-                    <p className="text-3xl font-bold mt-1 text-green-600">{publicadas}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{rascunhos} em rascunho</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Publicadas
+                    </p>
+                    <p className="text-3xl font-bold mt-1 text-green-600">
+                      {publicadas}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {rascunhos} em rascunho
+                    </p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Filtros */}
               <div className="flex gap-3 flex-wrap">
                 <div className="relative flex-1 min-w-48">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -351,7 +364,6 @@ export function AdminPage() {
                 </div>
               </div>
 
-              {/* Tabela de notícias */}
               <Card>
                 <CardContent className="p-0">
                   {noticiasFiltradas.length === 0 ? (
@@ -366,22 +378,28 @@ export function AdminPage() {
                           key={noticia.id}
                           className="flex items-center gap-4 p-4 hover:bg-muted/40 transition-colors"
                         >
-                          {/* Miniatura */}
-                          <div className={`size-12 rounded-lg ${noticia.imageUrl} shrink-0`} />
+                          <div
+                            className={`size-12 rounded-lg ${
+                              noticia.imageUrl || noticia_vazia.imageUrl
+                            } shrink-0`}
+                          />
 
-                          {/* Informações */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <p className="font-medium text-sm truncate">{noticia.title}</p>
+                              <p className="font-medium text-sm truncate">
+                                {noticia.title}
+                              </p>
                             </div>
+
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span>{noticia.publishedAt}</span>
+                              <span>
+                                {noticia.publishedAt ?? "Não publicada"}
+                              </span>
                             </div>
                           </div>
 
-                          {/* Status */}
                           <button
-                            onClick={() => togglePublicada(noticia.id)}
+                            onClick={() => togglePublicada(noticia)}
                             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
                               noticia.status === "PUBLISHED"
                                 ? "bg-green-100 text-green-700 hover:bg-green-200"
@@ -389,13 +407,16 @@ export function AdminPage() {
                             }`}
                           >
                             {noticia.status === "PUBLISHED" ? (
-                              <><Eye className="size-3" /> Publicada</>
+                              <>
+                                <Eye className="size-3" /> Publicada
+                              </>
                             ) : (
-                              <><EyeOff className="size-3" /> Rascunho</>
+                              <>
+                                <EyeOff className="size-3" /> Rascunho
+                              </>
                             )}
                           </button>
 
-                          {/* Ações */}
                           <div className="flex items-center gap-1 shrink-0">
                             <Button
                               variant="ghost"
@@ -406,6 +427,7 @@ export function AdminPage() {
                             >
                               <Pencil className="size-4" />
                             </Button>
+
                             <Button
                               variant="ghost"
                               size="icon"
