@@ -7,11 +7,15 @@ import com.portalescolar.shared.exception.BusinessRuleException;
 import com.portalescolar.user.entity.User;
 import com.portalescolar.user.mapper.UserMapper;
 import com.portalescolar.user.repository.UserRepository;
+import com.portalescolar.auth.dto.RegisterRequestDTO;
+import com.portalescolar.auth.dto.UserResponseDto;
+import com.portalescolar.user.entity.Role;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.AuthenticationManager;
 
 import org.springframework.security.core.AuthenticationException;
 
@@ -22,6 +26,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public LoginResponseDto login(LoginRequestDto dto) {
         try {
@@ -60,4 +65,19 @@ public class AuthService {
                 userMapper.toResponseDTO(user)
         );
     }
+
+   public UserResponseDto register(RegisterRequestDto dto) {
+    if (userRepository.existsByEmail(dto.email())) {
+        throw new BusinessRuleException("E-mail já cadastrado.");
+    }
+
+    User user = new User();
+    user.setName(dto.name());
+    user.setEmail(dto.email());
+    user.setPassword(passwordEncoder.encode(dto.password()));
+    user.setRole(Role.USER);
+    user.setActive(true);
+
+    return userMapper.toResponseDTO(userRepository.save(user));
+}
 }

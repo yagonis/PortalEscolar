@@ -5,7 +5,7 @@ import { AdminPage } from "./pages/AdminPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { SignInPage } from "./pages/SignInPage";
+import { UserCreatePage } from "./pages/SignInPage";
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
 
       { path: "*", Component: NotFoundPage },
       { path: "login", Component: LoginPage },
-      { path: "signIn", Component: SignInPage}
+      { path: "signIn", Component: UserCreatePage }
     ],
   },
 ]);

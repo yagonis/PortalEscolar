@@ -70,6 +70,7 @@ public class SecurityConfig {
 
                         // --- PÚBLICO --- nenhum token necessário
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
 
 
                         // notícias: GET público (o service já filtra só PUBLISHED para não autenticados)
@@ -86,6 +87,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/polls/{id}/result").permitAll()
 
                         // --- APENAS ADMIN ---
+
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/warnings").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/warnings/**").hasRole("ADMIN")

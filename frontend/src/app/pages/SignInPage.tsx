@@ -4,7 +4,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
-type Role = "ADMIN" | "USER";
+type Role = "USER";
 
 export function UserCreatePage() {
   const [name, setName] = useState("");
@@ -15,17 +15,15 @@ export function UserCreatePage() {
   async function salvarUsuario() {
     const token = localStorage.getItem("token");
 
-    const resposta = await fetch("http://localhost:8080/api/users", {
+    const resposta = await fetch("http://localhost:8080/api/auth/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         name,
         email,
         password,
-        role,
       }),
     });
 
@@ -66,18 +64,6 @@ export function UserCreatePage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Perfil</Label>
-            <select
-              className="w-full border rounded-md h-10 px-3"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-            >
-              <option value="USER">Usuário comum</option>
-              <option value="ADMIN">Administrador</option>
-            </select>
           </div>
 
           <Button onClick={salvarUsuario} className="w-full">

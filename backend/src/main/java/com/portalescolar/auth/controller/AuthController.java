@@ -20,4 +20,9 @@ public class AuthController {
     public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto dto) {
         return ResponseEntity.ok(authService.login(dto));
     }
+
+    @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserResponseDto> register(@RequestBody @Valid RegisterRequestDTO dto) {
+        return ResponseEntity.ok(authService.register(dto));
+    }
 }

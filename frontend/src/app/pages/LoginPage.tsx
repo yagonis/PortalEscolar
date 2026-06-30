@@ -21,13 +21,9 @@ export function LoginPage() {
     }
   }
 
-  async function handleSignIn() {
-    try{
-      await navigate("/signIn");
-    } catch (error) {
-      alert("Erro ao navegar para a página de cadastro");
-    }
-  }
+ function handleSignIn() {
+  navigate("/signIn");
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
