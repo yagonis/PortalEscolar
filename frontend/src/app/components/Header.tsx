@@ -35,8 +35,8 @@ export function Header() {
               { to: "/", label: "Início" },
               { to: "/#avisos", label: "Avisos" },
               { to: "/#eventos", label: "Eventos" },
-              { to: "/#noticias", label: "Notícias" },
-              { to: "/#contato", label: "Fale Conosco" },
+              { to: "/news", label: "Notícias" },
+              { to: "/#faleconosco", label: "Fale Conosco" },
             ].map(({ to, label }) => (
               <NavLink
                 key={label}

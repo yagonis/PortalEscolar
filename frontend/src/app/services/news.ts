@@ -100,3 +100,17 @@ export async function voltarParaRascunho(id: string) {
 
   return resposta.json();
 }
+
+export async function listarNoticiasPublicas() {
+  const resposta = await fetch(`${API_URL}/api/news`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!resposta.ok) {
+    throw new Error("Erro ao listar notícias públicas");
+  }
+
+  return resposta.json();
+}

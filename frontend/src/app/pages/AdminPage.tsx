@@ -11,6 +11,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
+import {Link} from "react-router";
 import {
   criarNoticia,
   listarNoticias,
@@ -282,14 +283,18 @@ export function AdminPage() {
               Notícias
             </button>
 
+
+            <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${modo === "lista"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-accent text-foreground"
+                }`}
+            >
+              <Calendar className="size-4" />
+              <Link to="/vote"> Enquetes </Link>
+            </button>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors opacity-50 cursor-not-allowed">
               <Bell className="size-4" />
               Avisos
-            </button>
-
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors opacity-50 cursor-not-allowed">
-              <Calendar className="size-4" />
-              Enquetes
             </button>
           </nav>
 

@@ -4,6 +4,8 @@ package com.portalescolar.auth.controller;
 import com.portalescolar.auth.dto.LoginRequestDto;
 import com.portalescolar.auth.dto.LoginResponseDto;
 import com.portalescolar.auth.service.AuthService;
+import com.portalescolar.auth.dto.RegisterRequestDTO;
+import com.portalescolar.user.dto.UserResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

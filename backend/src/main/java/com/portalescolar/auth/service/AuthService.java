@@ -8,7 +8,7 @@ import com.portalescolar.user.entity.User;
 import com.portalescolar.user.mapper.UserMapper;
 import com.portalescolar.user.repository.UserRepository;
 import com.portalescolar.auth.dto.RegisterRequestDTO;
-import com.portalescolar.auth.dto.UserResponseDto;
+import com.portalescolar.user.dto.UserResponseDto;
 import com.portalescolar.user.entity.Role;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +16,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.core.AuthenticationException;
 
@@ -66,7 +67,7 @@ public class AuthService {
         );
     }
 
-   public UserResponseDto register(RegisterRequestDto dto) {
+   public UserResponseDto register(RegisterRequestDTO dto) {
     if (userRepository.existsByEmail(dto.email())) {
         throw new BusinessRuleException("E-mail já cadastrado.");
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Newspaper, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
+import {Link} from "react-router";
 
 type Noticia = {
   id: string;
@@ -43,7 +44,9 @@ export function UltimasNoticias() {
             </CardTitle>
             <CardDescription>Fique por dentro das novidades da escola</CardDescription>
           </div>
-          <Button variant="outline" size="sm">Ver Todas</Button>
+          <Button variant="outline" size="sm" >
+            <Link to="/news"> Ver Todas </Link>
+          </Button>
         </div>
       </CardHeader>
 

@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 
 
+
 export function LoginPage() {
   const navigate = useNavigate();
 
@@ -14,10 +15,14 @@ export function LoginPage() {
 
   async function handleLogin() {
     try {
-      await login(email, password);
-      navigate("/admin");
+      const resposta = await login(email, password);
+      if (resposta.user.role === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
-      alert("Email ou senha inválidos");
+      alert("Erro ao fazer login. Verifique suas credenciais.");
     }
   }
 

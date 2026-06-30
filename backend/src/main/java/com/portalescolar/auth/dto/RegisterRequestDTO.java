@@ -1,4 +1,4 @@
-package com.portalescolar.auth.controller;
+package com.portalescolar.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

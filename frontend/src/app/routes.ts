@@ -6,6 +6,8 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { UserCreatePage } from "./pages/SignInPage";
+import { NewsPage } from "./pages/NewsPage";
+import { VotePage } from "./pages/VotePage";
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +24,9 @@ export const router = createBrowserRouter([
 
       { path: "*", Component: NotFoundPage },
       { path: "login", Component: LoginPage },
-      { path: "signIn", Component: UserCreatePage }
+      { path: "signIn", Component: UserCreatePage,},
+      { path: "news", Component: NewsPage},
+      { path: "vote", Component: VotePage}
     ],
   },
 ]);
