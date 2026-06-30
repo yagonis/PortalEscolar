@@ -19,7 +19,6 @@ export function HomePage() {
           </div>
         </div>
         <UltimasNoticias />
-        <AcessoRapido />
         <ParticipacaoCidada />
       </div>
     </>

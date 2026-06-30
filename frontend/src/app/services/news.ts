@@ -75,29 +75,27 @@ export async function excluirNoticia(id: string) {
 }
 
 export async function publicarNoticia(id: string) {
+  const resposta = await fetch(`${API_URL}/api/news/${id}/publish`, {
+    method: "PATCH",
+    headers: headers(),
+  });
 
-    const resposta = await fetch(
-        `${API_URL}/api/news/${id}/publish`,
-        {
-            method: "PATCH",
-            headers: headers()
-        }
-    );
+  if (!resposta.ok) {
+    throw new Error("Erro ao publicar notícia");
+  }
 
-    if (!resposta.ok)
-        throw new Error("Erro ao publicar notícia");
+  return resposta.json();
 }
 
 export async function voltarParaRascunho(id: string) {
+  const resposta = await fetch(`${API_URL}/api/news/${id}/draft`, {
+    method: "PATCH",
+    headers: headers(),
+  });
 
-    const resposta = await fetch(
-        `${API_URL}/api/news/${id}/draft`,
-        {
-            method: "PATCH",
-            headers: headers()
-        }
-    );
+  if (!resposta.ok) {
+    throw new Error("Erro ao voltar notícia para rascunho");
+  }
 
-    if (!resposta.ok)
-        throw new Error("Erro ao alterar notícia");
+  return resposta.json();
 }

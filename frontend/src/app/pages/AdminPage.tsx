@@ -144,20 +144,20 @@ export function AdminPage() {
     }
   }
 
-  async function togglePublicada(noticia: Noticia) {
-    try {
-      if (noticia.status === "PUBLISHED") {
-        await voltarParaRascunho(noticia.id);
-      } else {
-        await publicarNoticia(noticia.id);
-      }
-
-      await carregarNoticias();
-    } catch (erro) {
-      console.error(erro);
-      alert("Erro ao alterar status.");
+async function togglePublicada(noticia: Noticia) {
+  try {
+    if (noticia.status === "PUBLISHED") {
+      await voltarParaRascunho(noticia.id);
+    } else {
+      await publicarNoticia(noticia.id);
     }
+
+    await carregarNoticias();
+  } catch (erro) {
+    console.error(erro);
+    alert("Erro ao alterar status da notícia.");
   }
+}
 
   function logout() {
     localStorage.removeItem("token");
@@ -286,7 +286,7 @@ export function AdminPage() {
 
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors opacity-50 cursor-not-allowed">
               <Calendar className="size-4" />
-              Eventos
+              Enquetes
             </button>
           </nav>
 
@@ -399,23 +399,44 @@ export function AdminPage() {
                           </div>
 
                           <button
-                            onClick={() => togglePublicada(noticia)}
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
-                              noticia.status === "PUBLISHED"
-                                ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
+                          onClick={() => togglePublicada(noticia)}
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
+                            noticia.status === "PUBLISHED"
+                              ? "bg-green-100 text-green-700 hover:bg-green-200"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
                           >
-                            {noticia.status === "PUBLISHED" ? (
-                              <>
-                                <Eye className="size-3" /> Publicada
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="size-3" /> Rascunho
-                              </>
-                            )}
-                          </button>
+                         {noticia.status === "PUBLISHED" ? (
+                            <>|<button
+  onClick={() => togglePublicada(noticia)}
+  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
+    noticia.status === "PUBLISHED"
+      ? "bg-green-100 text-green-700 hover:bg-green-200"
+      : "bg-muted text-muted-foreground hover:bg-muted/80"
+  }`}
+>
+  {noticia.status === "PUBLISHED" ? (
+    <>
+      <Eye className="size-3" />
+      Publicada
+    </>
+  ) : (
+    <>
+      <EyeOff className="size-3" />
+      Rascunho
+    </>
+  )}
+</button>
+                              <Eye className="size-3" />
+                             Publicada
+                            </>
+                         ) : (
+                            <>
+                             <EyeOff className="size-3" />
+                             Rascunho
+                           </>
+                         )}
+                        </button>
 
                           <div className="flex items-center gap-1 shrink-0">
                             <Button

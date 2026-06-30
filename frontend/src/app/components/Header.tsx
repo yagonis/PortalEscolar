@@ -60,7 +60,7 @@ export function Header() {
             <Link to="/admin">
               <Button variant="outline" size="sm" className="gap-2 hidden lg:flex">
                 <Settings className="size-4" />
-                Painel Admin
+                Login
               </Button>
             </Link>
             <Button variant="ghost" size="icon" className="lg:hidden">
