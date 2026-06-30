@@ -21,6 +21,14 @@ export function LoginPage() {
     }
   }
 
+  async function handleSignIn() {
+    try{
+      await navigate("/signIn");
+    } catch (error) {
+      alert("Erro ao navegar para a página de cadastro");
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
       <div className="w-full max-w-sm bg-card border rounded-xl p-6 space-y-4">
@@ -50,6 +58,10 @@ export function LoginPage() {
 
         <Button onClick={handleLogin} className="w-full">
           Entrar
+        </Button>
+
+        <Button onClick={handleSignIn} className="w-full">
+          Cadastrar no portal
         </Button>
       </div>
     </div>

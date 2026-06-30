@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, Search,
   Newspaper, LogOut, LayoutDashboard, Bell, Calendar,
-  X, Check, ImageIcon, AlignLeft
+  X, Check, ImageIcon, AlignLeft, Link2
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Card, CardContent } from "../components/ui/card";
@@ -18,6 +18,7 @@ import {
   excluirNoticia,
   publicarNoticia,
   voltarParaRascunho,
+  arquivarNoticia
 } from "../services/news";
 
 type Status = "PUBLISHED" | "DRAFT" | "ARCHIVED";
@@ -42,20 +43,11 @@ type NoticiaForm = {
 
 type Modo = "lista" | "novo" | "editar";
 
-const GRADIENTES: Record<string, string> = {
-  "bg-gradient-to-br from-yellow-400 to-orange-500": "Amarelo → Laranja",
-  "bg-gradient-to-br from-green-400 to-emerald-600": "Verde → Esmeralda",
-  "bg-gradient-to-br from-blue-400 to-indigo-600": "Azul → Índigo",
-  "bg-gradient-to-br from-pink-400 to-rose-600": "Rosa → Vermelho",
-  "bg-gradient-to-br from-purple-400 to-violet-600": "Roxo → Violeta",
-  "bg-gradient-to-br from-teal-400 to-cyan-600": "Teal → Ciano",
-};
-
 const noticia_vazia: NoticiaForm = {
   title: "",
   subtitle: "",
   body: "",
-  imageUrl: "bg-gradient-to-br from-blue-400 to-indigo-600",
+  imageUrl: "",
 };
 
 export function AdminPage() {
@@ -144,20 +136,22 @@ export function AdminPage() {
     }
   }
 
-async function togglePublicada(noticia: Noticia) {
-  try {
-    if (noticia.status === "PUBLISHED") {
-      await voltarParaRascunho(noticia.id);
-    } else {
-      await publicarNoticia(noticia.id);
-    }
+  async function togglePublicada(noticia: Noticia) {
+    try {
+      if (noticia.status === "DRAFT") {
+        await publicarNoticia(noticia.id);
+      } else if(noticia.status === "PUBLISHED") {
+        await arquivarNoticia(noticia.id);
+      } else if (noticia.status === "ARCHIVED") {
+        await voltarParaRascunho(noticia.id);
+      }
 
-    await carregarNoticias();
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao alterar status da notícia.");
+      await carregarNoticias();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao alterar status da notícia.");
+    }
   }
-}
 
   function logout() {
     localStorage.removeItem("token");
@@ -180,24 +174,34 @@ async function togglePublicada(noticia: Noticia) {
       <Card>
         <CardContent className="pt-6 space-y-5">
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
+            <Label htmlFor="imageUrl" className="flex items-center gap-2">
               <ImageIcon className="size-4 text-muted-foreground" />
               Imagem de Capa
             </Label>
 
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(GRADIENTES).map(([cls, nome]) => (
-                <button
-                  key={cls}
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, imageUrl: cls }))}
-                  className={`h-14 rounded-lg ${cls} transition-all ring-offset-2 ${
-                    form.imageUrl === cls ? "ring-2 ring-primary" : "ring-0"
-                  }`}
-                  title={nome}
-                />
-              ))}
+            <div className="relative">
+              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                id="imageUrl"
+                placeholder="https://exemplo.com/imagem.jpg"
+                className="pl-9"
+                value={form.imageUrl}
+                onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+              />
             </div>
+
+            {form.imageUrl && (
+              <div className="mt-2 size-24 rounded-lg overflow-hidden border bg-muted">
+                <img
+                  src={form.imageUrl}
+                  alt="Pré-visualização"
+                  className="size-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -269,11 +273,10 @@ async function togglePublicada(noticia: Noticia) {
 
             <button
               onClick={() => setModo("lista")}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                modo === "lista"
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${modo === "lista"
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent text-foreground"
-              }`}
+                }`}
             >
               <Newspaper className="size-4" />
               Notícias
@@ -378,11 +381,20 @@ async function togglePublicada(noticia: Noticia) {
                           key={noticia.id}
                           className="flex items-center gap-4 p-4 hover:bg-muted/40 transition-colors"
                         >
-                          <div
-                            className={`size-12 rounded-lg ${
-                              noticia.imageUrl || noticia_vazia.imageUrl
-                            } shrink-0`}
-                          />
+                          <div className="size-12 rounded-lg overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                            {noticia.imageUrl ? (
+                              <img
+                                src={noticia.imageUrl}
+                                alt={noticia.title}
+                                className="size-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <ImageIcon className="size-5 text-muted-foreground" />
+                            )}
+                          </div>
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
@@ -399,44 +411,31 @@ async function togglePublicada(noticia: Noticia) {
                           </div>
 
                           <button
-                          onClick={() => togglePublicada(noticia)}
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
-                            noticia.status === "PUBLISHED"
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
+                            onClick={() => togglePublicada(noticia)}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${noticia.status === "PUBLISHED"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
                           >
-                         {noticia.status === "PUBLISHED" ? (
-                            <>|<button
-  onClick={() => togglePublicada(noticia)}
-  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
-    noticia.status === "PUBLISHED"
-      ? "bg-green-100 text-green-700 hover:bg-green-200"
-      : "bg-muted text-muted-foreground hover:bg-muted/80"
-  }`}
->
-  {noticia.status === "PUBLISHED" ? (
-    <>
-      <Eye className="size-3" />
-      Publicada
-    </>
-  ) : (
-    <>
-      <EyeOff className="size-3" />
-      Rascunho
-    </>
-  )}
-</button>
-                              <Eye className="size-3" />
-                             Publicada
-                            </>
-                         ) : (
-                            <>
-                             <EyeOff className="size-3" />
-                             Rascunho
-                           </>
-                         )}
-                        </button>
+                            {noticia.status === "DRAFT" && (
+                              <>
+                                <Eye className="size-3" />
+                                Publicar
+                              </>
+                            )}
+                            {noticia.status === "PUBLISHED" && (
+                              <>
+                                <EyeOff className="size-3" />
+                                Arquivar
+                              </>
+                            )}
+                            {noticia.status === "ARCHIVED" && (
+                              <>
+                                <Eye className="size-3" />
+                                Voltar para rascunho
+                              </>
+                            )}
+                          </button>
 
                           <div className="flex items-center gap-1 shrink-0">
                             <Button
